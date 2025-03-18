@@ -20,6 +20,7 @@ A Model Context Protocol (MCP) server that provides advanced HTTP request capabi
 ## Available Tools
 
 - **HTTP Request Tools**:
+
   - `http_get` - Perform GET requests with optional parameters
   - `http_post` - Submit data via POST requests
   - `http_put` - Update resources with PUT requests
@@ -34,7 +35,7 @@ A Model Context Protocol (MCP) server that provides advanced HTTP request capabi
 ### Using uv (recommended)
 
 When using [`uv`](https://docs.astral.sh/uv/) no specific installation is needed. We will
-use [`uvx`](https://docs.astral.sh/uv/guides/tools/) to directly run *mcp-rquest*.
+use [`uvx`](https://docs.astral.sh/uv/guides/tools/) to directly run _mcp-rquest_.
 
 ### Using pip
 
@@ -56,25 +57,20 @@ python -m mcp_rquest
 
 Add to your Claude settings:
 
-<details>
-<summary>Using uvx</summary>
+Using `uvx`:
 
 ```json
 {
   "mcpServers": {
     "http-rquest": {
       "command": "uvx",
-      "args": [
-        "mcp-rquest"
-      ]
+      "args": ["mcp-rquest"]
     }
   }
 }
 ```
-</details>
 
-<details>
-<summary>Using pip installation</summary>
+Using `pip`:
 
 ```json
 {
@@ -86,24 +82,22 @@ Add to your Claude settings:
   }
 }
 ```
+
 </details>
 
-<details>
-<summary>Using pipx</summary>
+Using `pipx`:
 
 ```json
 {
   "mcpServers": {
     "http-rquest": {
       "command": "pipx",
-      "args": [
-        "run",
-        "mcp-rquest"
-      ]
+      "args": ["run", "mcp-rquest"]
     }
   }
 }
 ```
+
 </details>
 
 ## Browser Emulation
