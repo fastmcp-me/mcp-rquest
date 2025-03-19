@@ -72,18 +72,17 @@ def store_response(content: str, content_type: str = "text/plain") -> Dict[str, 
         "char_count": char_count,
         "line_count": lines,
         "token_count": token_count,  # Add token count to metadata
-        "preview": content[:100] + "..." if len(content) > 100 else content,
-        "file_path": file_path,
-        "tips": [
+        "preview": content[:50] + "..." if len(content) > 50 else content,
+        "tips": " ".join([
             "Response content is large and may consume many tokens.",
             "Consider asking the user for permission before retrieving the full content.",
             "You can use get_stored_response with start_line and end_line parameters to retrieve only a portion of the content.",
-        ]
+        ])
         if "html" in content_type.lower() or "text/html" in content_type.lower()
-        else [
+        else " ".join([
             "Response content is large and may consume many tokens.",
             "Consider using get_stored_response_with_markdown to retrieve the full content in markdown format.",
-        ],
+        ]),
     }
     response_metadata[response_id] = metadata
 
@@ -384,7 +383,6 @@ def main(port: int, transport: str) -> int:
                     }
                 }
             ),
-            # Add other HTTP methods (PUT, DELETE, PATCH, HEAD, OPTIONS, TRACE)
             types.Tool(
                 name="http_put",
                 description="Make an HTTP PUT request to the specified URL",
