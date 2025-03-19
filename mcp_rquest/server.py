@@ -205,7 +205,7 @@ async def perform_http_request(
     else:
         response_data["content"] = content
 
-    return [types.TextContent(type="text", text=json.dumps(response_data))]
+    return [types.TextContent(type="text", text=json.dumps(response_data, ensure_ascii=False))]
 
 @click.command()
 @click.option("--port", default=8000, help="Port to listen on for SSE")
@@ -269,13 +269,13 @@ def main(port: int, transport: str) -> int:
                             "start_line": start_line + 1,
                             "end_line": end_line,
                         }
-                        return [types.TextContent(type="text", text=json.dumps(result))]
+                        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
 
                 # Return full content
                 result = {**metadata, "content": content, "is_partial": False}
-                return [types.TextContent(type="text", text=json.dumps(result))]
+                return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
             except Exception as e:
-                return [types.TextContent(type="text", text=json.dumps({"error": f"Failed to retrieve response: {str(e)}"}))]
+                return [types.TextContent(type="text", text=json.dumps({"error": f"Failed to retrieve response: {str(e)}"}, ensure_ascii=False))]
 
         elif name == "get_stored_response_with_markdown":
             response_id = arguments.get("response_id")
@@ -301,18 +301,18 @@ def main(port: int, transport: str) -> int:
                             "is_markdown": True,
                             "original_content_type": content_type,
                         }
-                        return [types.TextContent(type="text", text=json.dumps(result))]
+                        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
                     except Exception as e:
                         result = {
                             "error": f"Failed to convert HTML to Markdown: {str(e)}",
                             "content": content,
                         }
-                        return [types.TextContent(type="text", text=json.dumps(result))]
+                        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
                 else:
                     # Non-HTML content should not use `get_stored_response_with_markdown`
                     return [types.TextContent(type="text", text=json.dumps({"error": "Non-HTML content should use `get_stored_response`"}))]
             except Exception as e:
-                return [types.TextContent(type="text", text=json.dumps({"error": f"Failed to retrieve response: {str(e)}"}))]
+                return [types.TextContent(type="text", text=json.dumps({"error": f"Failed to retrieve response: {str(e)}"}, ensure_ascii=False))]
         else:
             raise ValueError(f"Unknown tool: {name}")
 
