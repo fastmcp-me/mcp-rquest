@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that provides advanced HTTP request capabi
 
 ## Features
 
-- **Complete HTTP Methods**: Support for GET, POST, PUT, DELETE
+- **Complete HTTP Methods**: Support for GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS, and TRACE
 - **Browser Fingerprinting**: Accurate TLS, JA3/JA4, and HTTP/2 browser fingerprints
 - **Content Handling**:
   - Automatic handling of large responses with token counting
@@ -25,6 +25,10 @@ A Model Context Protocol (MCP) server that provides advanced HTTP request capabi
   - `http_post` - Submit data via POST requests
   - `http_put` - Update resources with PUT requests
   - `http_delete` - Remove resources with DELETE requests
+  - `http_patch` - Partially update resources
+  - `http_head` - Retrieve only headers from a resource
+  - `http_options` - Retrieve options for a resource
+  - `http_trace` - Diagnostic request tracing
 
 - **Response Handling Tools**:
   - `get_stored_response` - Retrieve stored large responses, optionally by line range
