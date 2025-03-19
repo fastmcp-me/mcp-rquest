@@ -1,5 +1,7 @@
 # mcp-rquest
 
+[![PyPI Version](https://img.shields.io/pypi/v/mcp-rquest.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/mcp-rquest/) [![Python Versions](https://img.shields.io/pypi/pyversions/mcp-rquest?style=flat-square&logo=python&logoColor=white)](https://pypi.org/project/mcp-rquest/) [![GitHub Stars](https://img.shields.io/github/stars/xxxbrian/mcp-rquest?style=flat-square&logo=github)](https://github.com/xxxbrian/mcp-rquest) [![License](https://img.shields.io/github/license/xxxbrian/mcp-rquest?style=flat-square)](https://github.com/xxxbrian/mcp-rquest)
+
 A Model Context Protocol (MCP) server that provides advanced HTTP request capabilities for Claude and other LLMs. Built on [rquest](https://github.com/0x676e67/rquest), this server enables realistic browser emulation with accurate TLS/JA3/JA4 fingerprints, allowing models to interact with websites more naturally and bypass common anti-bot measures.
 
 ## Features
@@ -86,8 +88,6 @@ Using `pip`:
   }
 }
 ```
-
-</details>
 
 Using `pipx`:
 
