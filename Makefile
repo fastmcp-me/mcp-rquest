@@ -32,3 +32,15 @@ publish:
 	rm -rf dist
 	python -m build
 	python -m twine upload dist/*
+
+bump-version-patch:
+	uv tool install bump-my-version
+	bump-my-version bump patch
+
+bump-version-minor:
+	uv tool install bump-my-version
+	bump-my-version bump minor
+
+bump-version-major:
+	uv tool install bump-my-version
+	bump-my-version bump major
