@@ -430,6 +430,94 @@ def main(port: int, transport: str) -> int:
                 }
             ),
             types.Tool(
+                name="http_patch",
+                description="Make an HTTP PATCH request to the specified URL",
+                inputSchema={
+                    "type": "object",
+                    "required": ["url"],
+                    "properties": {
+                        "url": {"type": "string", "description": "URL to send the request to"},
+                        "proxy": {"type": "string", "description": "Proxy to use for the request"},
+                        "headers": {"type": "object", "description": "Headers to include in the request"},
+                        "cookies": {"type": "object", "description": "Cookies to include in the request"},
+                        "allow_redirects": {"type": "boolean", "description": "Whether to follow redirects"},
+                        "max_redirects": {"type": "integer", "description": "Maximum number of redirects to follow"},
+                        "auth": {"type": "string", "description": "Authentication credentials"},
+                        "bearer_auth": {"type": "string", "description": "Bearer token for authentication"},
+                        "basic_auth": {"type": "array", "description": "Basic auth credentials as [username, password]"},
+                        "query": {"type": "array", "description": "Query parameters as [[key, value], ...]"},
+                        "form": {"type": "array", "description": "Form data as [[key, value], ...]"},
+                        "json_payload": {"type": "object", "description": "JSON payload"},
+                        "body": {"type": "object", "description": "Request body"},
+                        "multipart": {"type": "array", "description": "Multipart data as [[key, value], ...]"},
+                        "force_store_response_content": {"type": "boolean", "description": "Force storing response content regardless of size"},
+                    }
+                }
+            ),
+            types.Tool(
+                name="http_head",
+                description="Make an HTTP HEAD request to retrieve only headers from the specified URL",
+                inputSchema={
+                    "type": "object",
+                    "required": ["url"],
+                    "properties": {
+                        "url": {"type": "string", "description": "URL to send the request to"},
+                        "proxy": {"type": "string", "description": "Proxy to use for the request"},
+                        "headers": {"type": "object", "description": "Headers to include in the request"},
+                        "cookies": {"type": "object", "description": "Cookies to include in the request"},
+                        "allow_redirects": {"type": "boolean", "description": "Whether to follow redirects"},
+                        "max_redirects": {"type": "integer", "description": "Maximum number of redirects to follow"},
+                        "auth": {"type": "string", "description": "Authentication credentials"},
+                        "bearer_auth": {"type": "string", "description": "Bearer token for authentication"},
+                        "basic_auth": {"type": "array", "description": "Basic auth credentials as [username, password]"},
+                        "query": {"type": "array", "description": "Query parameters as [[key, value], ...]"},
+                        "force_store_response_content": {"type": "boolean", "description": "Force storing response content regardless of size"},
+                    }
+                }
+            ),
+            types.Tool(
+                name="http_options",
+                description="Make an HTTP OPTIONS request to retrieve options for the specified URL",
+                inputSchema={
+                    "type": "object",
+                    "required": ["url"],
+                    "properties": {
+                        "url": {"type": "string", "description": "URL to send the request to"},
+                        "proxy": {"type": "string", "description": "Proxy to use for the request"},
+                        "headers": {"type": "object", "description": "Headers to include in the request"},
+                        "cookies": {"type": "object", "description": "Cookies to include in the request"},
+                        "allow_redirects": {"type": "boolean", "description": "Whether to follow redirects"},
+                        "max_redirects": {"type": "integer", "description": "Maximum number of redirects to follow"},
+                        "auth": {"type": "string", "description": "Authentication credentials"},
+                        "bearer_auth": {"type": "string", "description": "Bearer token for authentication"},
+                        "basic_auth": {"type": "array", "description": "Basic auth credentials as [username, password]"},
+                        "query": {"type": "array", "description": "Query parameters as [[key, value], ...]"},
+                        "force_store_response_content": {"type": "boolean", "description": "Force storing response content regardless of size"},
+                    }
+                }
+            ),
+            types.Tool(
+                name="http_trace",
+                description="Make an HTTP TRACE request for diagnostic tracing of the specified URL",
+                inputSchema={
+                    "type": "object",
+                    "required": ["url"],
+                    "properties": {
+                        "url": {"type": "string", "description": "URL to send the request to"},
+                        "proxy": {"type": "string", "description": "Proxy to use for the request"},
+                        "headers": {"type": "object", "description": "Headers to include in the request"},
+                        "cookies": {"type": "object", "description": "Cookies to include in the request"},
+                        "allow_redirects": {"type": "boolean", "description": "Whether to follow redirects"},
+                        "max_redirects": {"type": "integer", "description": "Maximum number of redirects to follow"},
+                        "auth": {"type": "string", "description": "Authentication credentials"},
+                        "bearer_auth": {"type": "string", "description": "Bearer token for authentication"},
+                        "basic_auth": {"type": "array", "description": "Basic auth credentials as [username, password]"},
+                        "query": {"type": "array", "description": "Query parameters as [[key, value], ...]"},
+                        "force_store_response_content": {"type": "boolean", "description": "Force storing response content regardless of size"},
+                    }
+                }
+            ),
+            types.Tool(
                 name="get_stored_response",
                 description="Retrieve a stored HTTP response by its ID",
                 inputSchema={
