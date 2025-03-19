@@ -263,7 +263,7 @@ def main(port: int, transport: str) -> int:
                 return [types.TextContent(type="text", text=json.dumps({"error": f"Response with ID {response_id} not found"}))]
 
             metadata = response_metadata[response_id]
-            file_path = metadata["file_path"]
+            file_path = os.path.join(RESPONSE_STORAGE_DIR, f"{response_id}.txt")
 
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
@@ -300,7 +300,7 @@ def main(port: int, transport: str) -> int:
                 return [types.TextContent(type="text", text=json.dumps({"error": f"Response with ID {response_id} not found"}))]
 
             metadata = response_metadata[response_id]
-            file_path = metadata["file_path"]
+            file_path = os.path.join(RESPONSE_STORAGE_DIR, f"{response_id}.txt")
             content_type = metadata["content_type"]
 
             try:
