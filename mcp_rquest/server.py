@@ -75,13 +75,13 @@ def store_response(content: str, content_type: str = "text/plain") -> Dict[str, 
         "preview": content[:50] + "..." if len(content) > 50 else content,
         "tips": " ".join([
             "Response content is large and may consume many tokens.",
-            "Consider asking the user for permission before retrieving the full content.",
-            "You can use get_stored_response with start_line and end_line parameters to retrieve only a portion of the content.",
+            "Consider using get_stored_response_with_markdown to retrieve the full content in markdown format.",
         ])
         if "html" in content_type.lower() or "text/html" in content_type.lower()
         else " ".join([
             "Response content is large and may consume many tokens.",
-            "Consider using get_stored_response_with_markdown to retrieve the full content in markdown format.",
+            "Consider asking the user for permission before retrieving the full content.",
+            "You can use get_stored_response with start_line and end_line parameters to retrieve only a portion of the content.",
         ]),
     }
     response_metadata[response_id] = metadata
@@ -325,9 +325,8 @@ def main(port: int, transport: str) -> int:
                         }
                         return [types.TextContent(type="text", text=json.dumps(result))]
                 else:
-                    # Non-HTML content doesn't need conversion
-                    result = {**metadata, "content": content, "is_markdown": False}
-                    return [types.TextContent(type="text", text=json.dumps(result))]
+                    # Non-HTML content should not use `get_stored_response_with_markdown`
+                    return [types.TextContent(type="text", text=json.dumps({"error": "Non-HTML content should use `get_stored_response`"}))]
             except Exception as e:
                 return [types.TextContent(type="text", text=json.dumps({"error": f"Failed to retrieve response: {str(e)}"}))]
         else:
