@@ -19,32 +19,16 @@ os.makedirs(RESPONSE_STORAGE_DIR, exist_ok=True)
 response_metadata = {}  # UUID to metadata mapping
 
 
-def get_content_type(headers: dict) -> str:
+def get_content_type(headers: HeaderMap) -> str:
     """
     Get the content type from the headers.
     """
-    # Handle HeaderMap objects from newer rnet versions
-    if hasattr(headers, "get"):
-        # Original dictionary-like headers
-        content_type = headers.get("content-type")
-        if isinstance(content_type, bytes):
-            return content_type.decode("utf-8")
-        return content_type or "text/plain"
-    elif hasattr(headers, "getone"):
-        # HeaderMap objects in newer rnet
-        try:
-            content_type = headers.getone("content-type")
-            if isinstance(content_type, bytes):
-                return content_type.decode("utf-8")
-            return content_type
-        except (KeyError, ValueError):
-            return "text/plain"
-    else:
-        # Last resort fallback
-        return "text/plain"
+    # Use header_map_to_dict to get the content type
+    headers_dict = header_map_to_dict(headers)
+    return headers_dict.get("content-type", "unknown")
 
 
-def store_response(content: str, content_type: str = "text/plain") -> Dict[str, Any]:
+def store_response(content: str, content_type: str = "unknown") -> Dict[str, Any]:
     """
     Store HTTP response content in a file and return metadata about the stored content.
     """
@@ -77,7 +61,7 @@ def store_response(content: str, content_type: str = "text/plain") -> Dict[str, 
             "Response content is large and may consume many tokens.",
             "Consider using get_stored_response_with_markdown to retrieve the full content in markdown format.",
         ])
-        if "html" in content_type.lower() or "text/html" in content_type.lower()
+        if "html" in content_type.lower()
         else " ".join([
             "Response content is large and may consume many tokens.",
             "Consider asking the user for permission before retrieving the full content.",
