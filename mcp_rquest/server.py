@@ -183,7 +183,8 @@ async def perform_http_request(
     if bearer_auth:
         kwds["bearer_auth"] = bearer_auth
     if basic_auth:
-        kwds["basic_auth"] = basic_auth
+        # Convert basic_auth list to tuple if needed
+        kwds["basic_auth"] = tuple(basic_auth)
     if query:
         # Convert list of lists to list of tuples if needed
         kwds["query"] = [tuple(q) for q in query]
