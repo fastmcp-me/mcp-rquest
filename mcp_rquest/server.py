@@ -10,6 +10,9 @@ import mcp.types as types
 import rnet
 import tiktoken
 from markdownify import markdownify as md
+from marker.converters.pdf import PdfConverter
+from marker.models import create_model_dict
+from marker.output import text_from_rendered
 from mcp.server.lowlevel import Server
 from rnet import HeaderMap
 
@@ -17,6 +20,17 @@ from rnet import HeaderMap
 RESPONSE_STORAGE_DIR = os.path.join(tempfile.gettempdir(), "mcp-rquest-responses")
 os.makedirs(RESPONSE_STORAGE_DIR, exist_ok=True)
 response_metadata = {}  # UUID to metadata mapping
+
+# Use a global variable to record the Marker converter instance, so it only initializes once
+_MARKER_CONVERTER = None
+
+# Get Marker converter instance
+def get_marker_converter():
+    global _MARKER_CONVERTER
+    if _MARKER_CONVERTER is None:
+        # Silent initialization, models should have been downloaded during package installation
+        _MARKER_CONVERTER = PdfConverter(artifact_dict=create_model_dict())
+    return _MARKER_CONVERTER
 
 
 def get_content_type(headers: HeaderMap) -> str:
@@ -40,13 +54,25 @@ def store_response(content: str, content_type: str = "unknown") -> Dict[str, Any
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(content)
 
-    # Calculate metadata
-    lines = content.count("\n") + 1
-    char_count = len(content)
+    # Check if this might be base64-encoded binary content (PDF)
+    is_binary_content = "pdf" in content_type.lower() or "application/pdf" in content_type.lower()
 
-    # Calculate token count using tiktoken
-    encoding = tiktoken.get_encoding("cl100k_base")  # Using OpenAI's cl100k_base encoding
-    token_count = len(encoding.encode(content))
+    # Calculate metadata - handle binary content differently
+    if is_binary_content:
+        # For binary content, we don't meaningfully count lines
+        lines = 1
+        char_count = len(content)
+        # For base64 content, token count calculation is not useful
+        token_count = 0
+        preview = "Binary PDF content (base64 encoded)"
+    else:
+        # For text content, calculate normally
+        lines = content.count("\n") + 1
+        char_count = len(content)
+        # Calculate token count using tiktoken
+        encoding = tiktoken.get_encoding("cl100k_base")  # Using OpenAI's cl100k_base encoding
+        token_count = len(encoding.encode(content))
+        preview = content[:50] + "..." if len(content) > 50 else content
 
     # Store metadata
     metadata = {
@@ -56,12 +82,12 @@ def store_response(content: str, content_type: str = "unknown") -> Dict[str, Any
         "char_count": char_count,
         "line_count": lines,
         "token_count": token_count,  # Add token count to metadata
-        "preview": content[:50] + "..." if len(content) > 50 else content,
+        "preview": preview,
         "tips": " ".join([
             "Response content is large and may consume many tokens.",
             "Consider using get_stored_response_with_markdown to retrieve the full content in markdown format.",
         ])
-        if "html" in content_type.lower()
+        if "html" in content_type.lower() or "pdf" in content_type.lower() or "application/pdf" in content_type.lower()
         else " ".join([
             "Response content is large and may consume many tokens.",
             "Consider asking the user for permission before retrieving the full content.",
@@ -183,9 +209,17 @@ async def perform_http_request(
         kwds["multipart"] = [tuple(m) for m in multipart]
 
     resp = await getattr(rnet.Client(), method.lower())(url, **kwds)
+    content_type = get_content_type(resp.headers)
 
-    if "application/json" in get_content_type(resp.headers):
+    # Handle different content types
+    if "application/json" in content_type:
         content = await resp.json()
+    elif "application/pdf" in content_type or content_type.endswith("pdf"):
+        # For PDF content, store as binary and convert to base64
+        import base64
+        # Use resp.bytes() to get binary content
+        content_bytes = await resp.bytes()
+        content = base64.b64encode(content_bytes).decode('utf-8')
     else:
         content = await resp.text()
 
@@ -200,7 +234,7 @@ async def perform_http_request(
 
     # Store content if needed based on length or force flag
     if should_store_content(content, force_store_response_content):
-        metadata = store_response(content, get_content_type(resp.headers))
+        metadata = store_response(content, content_type)
         response_data["response_content"] = metadata
     else:
         response_data["content"] = content
@@ -308,9 +342,62 @@ def main(port: int, transport: str) -> int:
                             "content": content,
                         }
                         return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                # Add PDF handling using marker library
+                elif "pdf" in content_type.lower():
+                    try:
+                        # Create a temporary PDF file
+                        temp_pdf_path = os.path.join(RESPONSE_STORAGE_DIR, f"{response_id}.pdf")
+
+                        try:
+                            # First, try to decode as base64
+                            import base64
+                            pdf_content = base64.b64decode(content)
+                            # Write binary content to file
+                            with open(temp_pdf_path, "wb") as pdf_file:
+                                pdf_file.write(pdf_content)
+                        except Exception as decode_err:
+                            # If base64 decoding fails, try writing the content directly
+                            try:
+                                # If it's already binary or text, write accordingly
+                                if isinstance(content, bytes):
+                                    with open(temp_pdf_path, "wb") as pdf_file:
+                                        pdf_file.write(content)
+                                else:
+                                    with open(temp_pdf_path, "w", encoding="utf-8") as pdf_file:
+                                        pdf_file.write(content)
+                            except Exception as write_err:
+                                return [types.TextContent(type="text", text=json.dumps({
+                                    "error": f"Failed to write PDF content: Base64 decode error: {str(decode_err)}, Write error: {str(write_err)}",
+                                    "content": content[:100] + "..." if len(content) > 100 else content
+                                }, ensure_ascii=False))]
+
+                        # Convert PDF to Markdown using marker
+                        converter = get_marker_converter()
+                        rendered = converter(temp_pdf_path)
+                        markdown_content, _, _ = text_from_rendered(rendered)
+
+                        # Clean up temporary file
+                        try:
+                            os.remove(temp_pdf_path)
+                        except:
+                            pass
+
+                        result = {
+                            **metadata,
+                            "content": markdown_content,
+                            "is_markdown": True,
+                            "original_content_type": content_type,
+                        }
+                        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
+                    except Exception as e:
+                        result = {
+                            "error": f"Failed to convert PDF to Markdown: {str(e)}",
+                            "content": content[:100] + "..." if len(content) > 100 else content,
+                        }
+                        return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
                 else:
-                    # Non-HTML content should not use `get_stored_response_with_markdown`
-                    return [types.TextContent(type="text", text=json.dumps({"error": "Non-HTML content should use `get_stored_response`"}))]
+                    # Non-supported content type
+                    return [types.TextContent(type="text", text=json.dumps({"error": f"Content type {content_type} is not supported for markdown conversion. Only HTML and PDF are supported."}))]
             except Exception as e:
                 return [types.TextContent(type="text", text=json.dumps({"error": f"Failed to retrieve response: {str(e)}"}, ensure_ascii=False))]
         else:
@@ -515,7 +602,7 @@ def main(port: int, transport: str) -> int:
             ),
             types.Tool(
                 name="get_stored_response_with_markdown",
-                description="Retrieve a stored HTTP response by its ID, converted to Markdown if HTML",
+                description="Retrieve a stored HTTP response by its ID and convert it to Markdown format. Supports HTML and PDF content types.",
                 inputSchema={
                     "type": "object",
                     "required": ["response_id"],
