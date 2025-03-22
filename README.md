@@ -2,7 +2,7 @@
 
 [![PyPI Version](https://img.shields.io/pypi/v/mcp-rquest.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/mcp-rquest/) [![Python Versions](https://img.shields.io/pypi/pyversions/mcp-rquest?style=flat-square&logo=python&logoColor=white)](https://pypi.org/project/mcp-rquest/) [![GitHub Stars](https://img.shields.io/github/stars/xxxbrian/mcp-rquest?style=flat-square&logo=github)](https://github.com/xxxbrian/mcp-rquest) [![License](https://img.shields.io/github/license/xxxbrian/mcp-rquest?style=flat-square)](https://github.com/xxxbrian/mcp-rquest)
 
-A Model Context Protocol (MCP) server that provides advanced HTTP request capabilities for Claude and other LLMs. Built on [rquest](https://github.com/0x676e67/rquest), this server enables realistic browser emulation with accurate TLS/JA3/JA4 fingerprints, allowing models to interact with websites more naturally and bypass common anti-bot measures.
+A Model Context Protocol (MCP) server that provides advanced HTTP request capabilities for Claude and other LLMs. Built on [rquest](https://github.com/0x676e67/rquest), this server enables realistic browser emulation with accurate TLS/JA3/JA4 fingerprints, allowing models to interact with websites more naturally and bypass common anti-bot measures. It also supports converting PDF and HTML documents to Markdown for easier processing by LLMs.
 
 ## Features
 
@@ -11,6 +11,7 @@ A Model Context Protocol (MCP) server that provides advanced HTTP request capabi
 - **Content Handling**:
   - Automatic handling of large responses with token counting
   - HTML to Markdown conversion for better LLM processing
+  - PDF to Markdown conversion using the Marker library
   - Secure storage of responses in system temporary directories
 - **Authentication Support**: Basic, Bearer, and custom authentication methods
 - **Request Customization**:
@@ -34,7 +35,16 @@ A Model Context Protocol (MCP) server that provides advanced HTTP request capabi
 
 - **Response Handling Tools**:
   - `get_stored_response` - Retrieve stored large responses, optionally by line range
-  - `get_stored_response_with_markdown` - Convert HTML responses to Markdown
+  - `get_stored_response_with_markdown` - Convert HTML or PDF responses to Markdown format for better LLM processing
+
+## PDF Support
+
+mcp-rquest now supports PDF to Markdown conversion, allowing you to download PDF files and convert them to Markdown format that's easy for LLMs to process:
+
+1. **Automatic PDF Detection**: PDF files are automatically detected based on content type
+2. **Seamless Conversion**: The same `get_stored_response_with_markdown` tool works for both HTML and PDF files
+3. **High-Quality Conversion**: Uses the [Marker](https://github.com/VikParuchuri/marker) library for accurate PDF to Markdown transformation
+4. **Optimized Performance**: Models are pre-downloaded during package installation to avoid delays during request processing
 
 ## Installation
 
