@@ -1,8 +1,10 @@
 import json
 import os
 import tempfile
+import threading
+import time
 import uuid
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import anyio
 import click
@@ -24,17 +26,85 @@ RESPONSE_STORAGE_DIR = os.path.join(tempfile.gettempdir(), "mcp-rquest-responses
 os.makedirs(RESPONSE_STORAGE_DIR, exist_ok=True)
 response_metadata = {}  # UUID to metadata mapping
 
-# Use a global variable to record the Marker converter instance, so it only initializes once
-_MARKER_CONVERTER = None
+# Model loading state
+class ModelState:
+    LOADING = "loading"
+    READY = "ready"
+    ERROR = "error"
 
-# Get Marker converter instance
-def get_marker_converter():
-    global _MARKER_CONVERTER
-    if _MARKER_CONVERTER is None:
-        # Silent initialization, models should have been downloaded during package installation
-        _MARKER_CONVERTER = PdfConverter(artifact_dict=create_model_dict())
-    return _MARKER_CONVERTER
+# Global state for model loading
+_MODEL_STATE = {
+    "state": ModelState.LOADING,
+    "error": None,
+    "converter": None,
+    "loading_thread": None,
+    "start_time": None
+}
 
+# Load marker converter in a separate thread
+def _load_marker_models():
+    try:
+        _MODEL_STATE["start_time"] = time.time()
+        _MODEL_STATE["state"] = ModelState.LOADING
+
+        # Load the converter
+        converter = PdfConverter(artifact_dict=create_model_dict())
+
+        # Update global state
+        _MODEL_STATE["converter"] = converter
+        _MODEL_STATE["state"] = ModelState.READY
+        loading_time = time.time() - _MODEL_STATE["start_time"]
+        print(f"PDF models loaded successfully in {loading_time:.2f} seconds")
+    except Exception as e:
+        # If loading fails, store the error
+        _MODEL_STATE["state"] = ModelState.ERROR
+        _MODEL_STATE["error"] = str(e)
+        print(f"Failed to load PDF models: {e}")
+
+# Start loading models in background thread
+def start_model_loading():
+    if _MODEL_STATE["loading_thread"] is None or not _MODEL_STATE["loading_thread"].is_alive():
+        _MODEL_STATE["loading_thread"] = threading.Thread(target=_load_marker_models, daemon=True)
+        _MODEL_STATE["loading_thread"].start()
+        print("Started loading PDF models in background thread")
+
+# Get Marker converter instance, returns None if not ready
+def get_marker_converter() -> Optional[PdfConverter]:
+    # Start loading if not already started
+    if _MODEL_STATE["loading_thread"] is None:
+        start_model_loading()
+
+    # Return the converter if ready
+    if _MODEL_STATE["state"] == ModelState.READY:
+        return _MODEL_STATE["converter"]
+
+    # Return None to indicate models aren't ready
+    return None
+
+# Check model state
+def get_model_state() -> Dict[str, Any]:
+    if _MODEL_STATE["state"] == ModelState.LOADING:
+        # Calculate loading time if available
+        loading_time = None
+        if _MODEL_STATE["start_time"] is not None:
+            loading_time = time.time() - _MODEL_STATE["start_time"]
+
+        return {
+            "state": ModelState.LOADING,
+            "message": "PDF models are still loading",
+            "loading_time": f"{loading_time:.2f} seconds" if loading_time else "unknown"
+        }
+    elif _MODEL_STATE["state"] == ModelState.ERROR:
+        return {
+            "state": ModelState.ERROR,
+            "message": "Failed to load PDF models",
+            "error": _MODEL_STATE["error"]
+        }
+    else:
+        return {
+            "state": ModelState.READY,
+            "message": "PDF models are loaded and ready"
+        }
 
 def get_content_type(headers: HeaderMap) -> str:
     """
@@ -254,6 +324,9 @@ async def perform_http_request(
 )
 @click.version_option(version=__version__, prog_name="mcp-rquest")
 def main(port: int, transport: str) -> int:
+    # Start loading models in background
+    start_model_loading()
+
     app = Server("mcp-rquest")
 
     @app.call_tool()
@@ -314,7 +387,6 @@ def main(port: int, transport: str) -> int:
                 return [types.TextContent(type="text", text=json.dumps(result, ensure_ascii=False))]
             except Exception as e:
                 return [types.TextContent(type="text", text=json.dumps({"error": f"Failed to retrieve response: {str(e)}"}, ensure_ascii=False))]
-
         elif name == "get_stored_response_with_markdown":
             response_id = arguments.get("response_id")
 
@@ -349,6 +421,16 @@ def main(port: int, transport: str) -> int:
                 # Add PDF handling using marker library
                 elif "pdf" in content_type.lower():
                     try:
+                        # Check if models are ready
+                        converter = get_marker_converter()
+                        if converter is None:
+                            model_state = get_model_state()
+                            return [types.TextContent(type="text", text=json.dumps({
+                                "error": f"Models not ready yet. Current state: {model_state['state']}",
+                                "model_state": model_state,
+                                "message": "Please try again later when the models are loaded."
+                            }, ensure_ascii=False))]
+
                         # Create a temporary PDF file
                         temp_pdf_path = os.path.join(RESPONSE_STORAGE_DIR, f"{response_id}.pdf")
 
@@ -376,7 +458,6 @@ def main(port: int, transport: str) -> int:
                                 }, ensure_ascii=False))]
 
                         # Convert PDF to Markdown using marker
-                        converter = get_marker_converter()
                         rendered = converter(temp_pdf_path)
                         markdown_content, _, _ = text_from_rendered(rendered)
 
@@ -404,13 +485,21 @@ def main(port: int, transport: str) -> int:
                     return [types.TextContent(type="text", text=json.dumps({"error": f"Content type {content_type} is not supported for markdown conversion. Only HTML and PDF are supported."}))]
             except Exception as e:
                 return [types.TextContent(type="text", text=json.dumps({"error": f"Failed to retrieve response: {str(e)}"}, ensure_ascii=False))]
+        elif name == "get_model_state":
+            # Return current model loading state
+            return [types.TextContent(type="text", text=json.dumps(get_model_state(), ensure_ascii=False))]
+        elif name == "restart_model_loading":
+            # Force restart model loading
+            start_model_loading()
+            return [types.TextContent(type="text", text=json.dumps({"message": "Model loading restarted"}, ensure_ascii=False))]
         else:
             raise ValueError(f"Unknown tool: {name}")
 
     @app.list_tools()
     async def list_tools() -> list[types.Tool]:
         """List available tools"""
-        return [
+        tools = [
+            # HTTP tools
             types.Tool(
                 name="http_get",
                 description="Make an HTTP GET request to the specified URL",
@@ -591,6 +680,7 @@ def main(port: int, transport: str) -> int:
                     }
                 }
             ),
+            # HTTP Response tools
             types.Tool(
                 name="get_stored_response",
                 description="Retrieve a stored HTTP response by its ID",
@@ -606,7 +696,7 @@ def main(port: int, transport: str) -> int:
             ),
             types.Tool(
                 name="get_stored_response_with_markdown",
-                description="Retrieve a stored HTTP response by its ID and convert it to Markdown format. Supports HTML and PDF content types.",
+                description="Retrieve a stored HTTP response by its ID and convert it to Markdown format. Supports HTML and PDF content types. (Converting large PDF to Markdown may cause timeout, just wait and try again.)",
                 inputSchema={
                     "type": "object",
                     "required": ["response_id"],
@@ -615,7 +705,25 @@ def main(port: int, transport: str) -> int:
                     }
                 }
             ),
+            # PDF Model-related tools
+            types.Tool(
+                name="get_model_state",
+                description="Get the current state of the PDF models(used by `get_stored_response_with_markdown`) loading process",
+                inputSchema={
+                    "type": "object",
+                    "properties": {}
+                }
+            ),
+            types.Tool(
+                name="restart_model_loading",
+                description="Restart the PDF models(used by `get_stored_response_with_markdown`) loading process if it failed or got stuck",
+                inputSchema={
+                    "type": "object",
+                    "properties": {}
+                }
+            ),
         ]
+        return tools
 
     # Setup server based on transport type
     if transport == "sse":
