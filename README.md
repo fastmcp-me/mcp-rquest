@@ -36,6 +36,8 @@ A Model Context Protocol (MCP) server that provides advanced HTTP request capabi
 - **Response Handling Tools**:
   - `get_stored_response` - Retrieve stored large responses, optionally by line range
   - `get_stored_response_with_markdown` - Convert HTML or PDF responses to Markdown format for better LLM processing
+  - `get_model_state` - Get the current state of the PDF models loading process
+  - `restart_model_loading` - Restart the PDF models loading process if it failed or got stuck
 
 ## PDF Support
 
