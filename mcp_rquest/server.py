@@ -16,6 +16,9 @@ from marker.output import text_from_rendered
 from mcp.server.lowlevel import Server
 from rnet import HeaderMap
 
+# Import version from package
+from mcp_rquest import __version__
+
 # Storage for responses - use system temp directory
 RESPONSE_STORAGE_DIR = os.path.join(tempfile.gettempdir(), "mcp-rquest-responses")
 os.makedirs(RESPONSE_STORAGE_DIR, exist_ok=True)
@@ -249,6 +252,7 @@ async def perform_http_request(
     default="stdio",
     help="Transport type",
 )
+@click.version_option(version=__version__, prog_name="mcp-rquest")
 def main(port: int, transport: str) -> int:
     app = Server("mcp-rquest")
 
