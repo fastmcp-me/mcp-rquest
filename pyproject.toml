@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-rquest"
-version = "0.1.12"
+version = "0.1.13"
 description = "A Model Context Protocol (MCP) server providing advanced HTTP request capabilities with realistic browser emulation for Claude and other LLMs"
 readme = "README.md"
 requires-python = ">=3.10"
