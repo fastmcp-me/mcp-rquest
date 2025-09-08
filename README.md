@@ -1,3 +1,10 @@
+[![Add to Cursor](https://fastmcp.me/badges/cursor_dark.svg)](https://fastmcp.me/MCP/Details/903/http-request)
+[![Add to VS Code](https://fastmcp.me/badges/vscode_dark.svg)](https://fastmcp.me/MCP/Details/903/http-request)
+[![Add to Claude](https://fastmcp.me/badges/claude_dark.svg)](https://fastmcp.me/MCP/Details/903/http-request)
+[![Add to ChatGPT](https://fastmcp.me/badges/chatgpt_dark.svg)](https://fastmcp.me/MCP/Details/903/http-request)
+[![Add to Codex](https://fastmcp.me/badges/codex_dark.svg)](https://fastmcp.me/MCP/Details/903/http-request)
+[![Add to Gemini](https://fastmcp.me/badges/gemini_dark.svg)](https://fastmcp.me/MCP/Details/903/http-request)
+
 # mcp-rquest
 
 [![PyPI Version](https://img.shields.io/pypi/v/mcp-rquest.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/mcp-rquest/) [![Python Versions](https://img.shields.io/pypi/pyversions/mcp-rquest?style=flat-square&logo=python&logoColor=white)](https://pypi.org/project/mcp-rquest/) [![GitHub Stars](https://img.shields.io/github/stars/xxxbrian/mcp-rquest?style=flat-square&logo=github)](https://github.com/xxxbrian/mcp-rquest) [![License](https://img.shields.io/github/license/xxxbrian/mcp-rquest?style=flat-square)](https://github.com/xxxbrian/mcp-rquest)
